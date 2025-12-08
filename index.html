@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>UniSched AI Ultimate</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .tab-active { border-bottom: 2px solid #4f46e5; color: #4f46e5; font-weight: bold; }
+        .tab-inactive { color: #64748b; }
+        
+        .ai-msg table { width: 100%; border-collapse: collapse; font-size: 0.85em; margin-top: 8px; background: white; border-radius: 4px; border: 1px solid #e2e8f0; }
+        .ai-msg th, .ai-msg td { border: 1px solid #e2e8f0; padding: 6px; text-align: left; }
+        .ai-msg th { background: #4f46e5; color: white; font-weight: 600; }
+        .ai-msg tr:nth-child(even) { background-color: #f8fafc; }
+
+        .chat-download-btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            background-color: #10b981; color: white;
+            padding: 8px 16px; border-radius: 6px; font-weight: bold;
+            text-decoration: none; margin-top: 8px; cursor: pointer;
+            transition: background 0.2s; border: 1px solid #059669;
+        }
+        .chat-download-btn:hover { background-color: #059669; }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 h-screen overflow-hidden font-sans">
+
+<div id="app" class="flex h-full relative">
+    
+    <div class="w-[500px] bg-white shadow-2xl z-20 flex flex-col h-full border-r border-gray-200 flex-shrink-0">
+        <div class="p-4 bg-indigo-700 text-white flex justify-between items-center shrink-0">
+            <h1 class="text-lg font-bold"><i class="fas fa-calendar-check mr-2"></i>UniSched AI</h1>
+            <div class="text-xs font-bold bg-indigo-800 rounded p-1 flex gap-2 cursor-pointer">
+                <span @click="changeLang('kz')" :class="{'text-yellow-300': lang==='kz', 'opacity-50': lang!=='kz'}">KZ</span>
+                <span class="opacity-50">|</span>
+                <span @click="changeLang('ru')" :class="{'text-yellow-300': lang==='ru', 'opacity-50': lang!=='ru'}">RU</span>
+            </div>
+        </div>
+
+        <div class="flex border-b text-sm bg-gray-50 shrink-0">
+            <button @click="tab=1" class="flex-1 py-3 transition" :class="tab===1 ? 'tab-active' : 'tab-inactive'">{{ t('tabData') }}</button>
+            <button @click="tab=2" class="flex-1 py-3 transition" :class="tab===2 ? 'tab-active' : 'tab-inactive'">{{ t('tabLessons') }}</button>
+            <button @click="tab=3" class="flex-1 py-3 transition" :class="tab===3 ? 'tab-active' : 'tab-inactive'">{{ t('tabSettings') }}</button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-4 space-y-6 bg-white">
+            <div v-if="tab===1" class="space-y-6">
+                <div>
+                    <div class="flex justify-between items-end mb-1">
+                        <label class="text-xs font-bold text-gray-500 uppercase">{{ t('lblTeachers') }}</label>
+                        <button @click="showBulkModal('teachers')" class="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded border border-indigo-200 hover:bg-indigo-100">{{ t('btnExcel') }}</button>
+                    </div>
+                    <div class="flex gap-2 mb-2">
+                        <input v-model="tempTeacher" @keyup.enter="addTeacher" class="flex-1 p-2 border rounded text-sm" :placeholder="t('phTeacherName')">
+                        <button @click="addTeacher" class="bg-indigo-100 text-indigo-700 px-3 rounded font-bold">+</button>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <div v-for="(teach, idx) in teachers" :key="idx" class="bg-indigo-50 px-2 py-1 rounded text-sm flex items-center gap-2 border border-indigo-100">
+                            <span>{{ teach }}</span>
+                            <button @click="openTimeModal(teach)" :class="teacherBusy[teach] && teacherBusy[teach].length ? 'text-red-500' : 'text-gray-400'" class="hover:text-indigo-700 transition"><i class="fas fa-clock"></i></button>
+                            <button @click="teachers.splice(idx, 1)" class="text-red-400 hover:text-red-600">×</button>
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <div>
+                    <div class="flex justify-between items-end mb-1">
+                        <label class="text-xs font-bold text-gray-500 uppercase">{{ t('lblSubjects') }}</label>
+                        <button @click="showBulkModal('subjects')" class="text-[10px] bg-purple-50 text-purple-700 px-2 py-0.5 rounded border border-purple-200 hover:bg-purple-100">{{ t('btnExcel') }}</button>
+                    </div>
+                    <div class="flex gap-2 mb-2">
+                        <input v-model="tempSubject" @keyup.enter="addSubject" class="flex-1 p-2 border rounded text-sm" :placeholder="t('phSubjectName')">
+                        <button @click="addSubject" class="bg-purple-100 text-purple-700 px-3 rounded font-bold">+</button>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <div v-for="(subj, idx) in subjects" :key="idx" class="bg-purple-50 px-2 py-1 rounded text-sm flex items-center gap-2 border border-purple-100">
+                            <span>{{ subj }}</span>
+                            <button @click="subjects.splice(idx, 1)" class="text-red-400 hover:text-red-600">×</button>
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <div>
+                    <div class="flex justify-between items-end mb-1">
+                        <label class="text-xs font-bold text-gray-500 uppercase">{{ t('lblGroups') }}</label>
+                        <button @click="showBulkModal('groups')" class="text-[10px] bg-green-50 text-green-700 px-2 py-0.5 rounded border border-green-200 hover:bg-green-100">{{ t('btnExcel') }}</button>
+                    </div>
+                    <div class="bg-gray-50 p-2 rounded border space-y-2">
+                        <div class="flex gap-2">
+                            <input v-model="tempGroup.name" class="flex-1 p-1 border rounded text-sm" :placeholder="t('phName')">
+                            <input v-model.number="tempGroup.size" type="number" class="w-16 p-1 border rounded text-sm text-center" :placeholder="t('phCount')">
+                            <button @click="addGroup" class="bg-green-100 text-green-700 px-3 rounded font-bold">+</button>
+                        </div>
+                        <div class="max-h-32 overflow-y-auto space-y-1">
+                            <div v-for="(g, i) in groups" class="flex justify-between items-center bg-white p-1 px-2 border rounded text-sm">
+                                <span>{{ g.name }}</span>
+                                <span class="text-xs text-gray-400">{{ g.size || 0 }}</span>
+                                <button @click="groups.splice(i, 1)" class="text-red-400">×</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <div>
+                    <div class="flex justify-between items-end mb-1">
+                        <label class="text-xs font-bold text-gray-500 uppercase">{{ t('lblRooms') }}</label>
+                        <button @click="showBulkModal('rooms')" class="text-[10px] bg-green-50 text-green-700 px-2 py-0.5 rounded border border-green-200 hover:bg-green-100">{{ t('btnExcel') }}</button>
+                    </div>
+                    <div class="bg-gray-50 p-2 rounded border space-y-2">
+                        <div class="flex gap-2">
+                            <input v-model="tempRoom.name" class="flex-1 p-1 border rounded text-sm" :placeholder="t('phRoomName')">
+                            <input v-model.number="tempRoom.capacity" type="number" class="w-16 p-1 border rounded text-sm text-center" :placeholder="t('phCap')">
+                            <button @click="addRoom" class="bg-green-100 text-green-700 px-3 rounded font-bold">+</button>
+                        </div>
+                        <div class="max-h-32 overflow-y-auto space-y-1">
+                            <div v-for="(r, i) in rooms" class="flex justify-between items-center bg-white p-1 px-2 border rounded text-sm">
+                                <span>{{ r.name }}</span>
+                                <span class="text-xs bg-gray-100 px-1 rounded text-gray-500">🪑 {{ r.capacity || '∞' }}</span>
+                                <button @click="rooms.splice(i, 1)" class="text-red-400">×</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="tab===2" class="space-y-4">
+                <div class="bg-white border border-indigo-200 p-3 rounded shadow-sm space-y-3">
+                    <label class="text-[10px] text-gray-500 uppercase font-bold">{{ t('lblSubjectSelect') }}</label>
+                    <div class="flex gap-2">
+                        <select v-model="newAssign.subject" class="w-full p-2 text-sm border rounded bg-gray-50 focus:bg-white">
+                            <option disabled value="">{{ t('phSubject') }}</option>
+                            <option v-for="s in subjects" :value="s">{{s}}</option>
+                        </select>
+                    </div>
+                    <div class="flex gap-2">
+                        <div class="w-1/2">
+                            <label class="text-[10px] text-gray-500 uppercase font-bold">{{ t('lblTeachShort') }}</label>
+                            <select v-model="newAssign.teacher" class="w-full p-2 text-sm border rounded bg-gray-50">
+                                <option disabled value="">...</option>
+                                <option v-for="t in teachers" :value="t">{{t}}</option>
+                            </select>
+                        </div>
+                        <div class="w-1/2 flex gap-1">
+                             <div class="flex-1">
+                                <label class="text-[10px] text-gray-500 uppercase font-bold">{{ t('lblTypeShort') }}</label>
+                                <select v-model="newAssign.type" class="w-full p-2 text-sm border rounded bg-yellow-50">
+                                    <option value="seminar">{{ t('typeSem') }}</option>
+                                    <option value="lecture">{{ t('typeLec') }}</option>
+                                </select>
+                             </div>
+                             <div class="w-16">
+                                <label class="text-[10px] text-gray-500 uppercase font-bold">{{ t('lblHoursShort') }}</label>
+                                <input type="number" v-model.number="newAssign.count" class="w-full p-2 border rounded text-center text-sm" min="1">
+                             </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-[10px] text-gray-500 uppercase font-bold">{{ t('selGroup') }} ({{ selectedGroups.length }})</label>
+                            <button @click="toggleAllGroups" class="text-[10px] text-indigo-600 font-bold hover:underline">{{ selectedGroups.length === groups.length ? '✕' : '✓' }} {{ t('btnSelectAll') }}</button>
+                        </div>
+                        <div class="max-h-60 overflow-y-auto border rounded bg-gray-50 p-2 grid grid-cols-2 gap-1">
+                            <label v-for="g in groups" class="flex items-center gap-2 text-xs bg-white p-1 rounded border cursor-pointer hover:bg-indigo-50">
+                                <input type="checkbox" :value="g.name" v-model="selectedGroups" class="text-indigo-600 rounded focus:ring-0">
+                                <span>{{ g.name }}</span>
+                            </label>
+                        </div>
+                    </div>
+                    <button @click="addAssignment" class="w-full bg-indigo-600 text-white px-4 py-2 rounded text-sm hover:bg-indigo-700 font-bold">+ {{ t('btnAdd') }}</button>
+                </div>
+
+                <div class="space-y-2 pb-10">
+                    <div v-for="(item, idx) in assignments" :key="idx" class="flex justify-between items-start bg-white p-3 border rounded shadow-sm text-sm hover:bg-gray-50 transition">
+                        <div class="flex-1 min-w-0">
+                            <div class="font-bold text-gray-800 flex items-center gap-2">
+                                <span class="text-[10px] px-1.5 py-0.5 rounded border" :class="item.type=='lecture'?'bg-red-50 text-red-600 border-red-200':'bg-green-50 text-green-600 border-green-200'">{{ item.type == 'lecture' ? t('badgeL') : t('badgeS') }}</span>
+                                {{ item.subject }}
+                            </div>
+                            <div class="text-xs text-gray-500 mt-1">
+                                <div class="mb-1">{{ item.teacher }}</div>
+                                <div class="flex flex-wrap gap-1">
+                                    <span v-for="g in item.groups" class="bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200 whitespace-nowrap">{{ g }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button @click="removeAssignment(idx)" class="text-red-400 hover:text-red-600 ml-2"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="tab===3" class="space-y-6">
+                <div class="bg-indigo-50 p-3 rounded border border-indigo-100">
+                    <h3 class="font-bold text-indigo-900 text-sm mb-2">{{ t('timeSettings') }}</h3>
+                    <div class="space-y-2 text-xs">
+                        <div><label class="font-bold">{{ t('daysLabel') }}</label><input v-model="configDays" class="w-full p-1 border rounded mt-1"></div>
+                        <div><label class="font-bold">{{ t('timesLabel') }}</label><textarea v-model="configTimes" rows="12" class="w-full p-1 border rounded mt-1"></textarea></div>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="font-bold text-gray-700 text-sm uppercase border-b pb-1 mb-2">{{ t('prefs') }} <span class="text-[10px] text-gray-400">{{ t('prefsHint') }}</span></h3>
+                    <div class="flex gap-1 mb-2">
+                        <select v-model="prefTeacher" class="w-1/2 p-1 text-sm border rounded"><option value="">{{ t('selTeacher') }}</option><option v-for="t in teachers" :value="t">{{t}}</option></select>
+                        <select v-model="prefTeacherRoom" class="w-1/2 p-1 text-sm border rounded"><option value="">{{ t('selRoom') }}</option><option v-for="r in rooms" :value="r.name">{{r.name}}</option></select>
+                        <button @click="addTeacherPref" class="bg-gray-200 px-2 rounded">+</button>
+                    </div>
+                    <div class="space-y-1">
+                        <div v-for="(room, teacher) in teacherPrefs" class="flex justify-between text-xs bg-yellow-50 p-1 px-2 rounded border border-yellow-100">
+                            <span><b>{{teacher}}</b> -> {{room}}</span>
+                            <button @click="delete teacherPrefs[teacher]" class="text-red-400">×</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-4 border-t bg-gray-50 shrink-0">
+            <button @click="generate" :disabled="loading" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded shadow-lg transition flex justify-center items-center gap-2">
+                <span v-if="loading" class="animate-spin"><i class="fas fa-circle-notch"></i></span>
+                {{ loading ? t('btnGenLoad') : t('btnGen') }}
+            </button>
+        </div>
+    </div>
+
+    <div class="flex-1 flex flex-col h-full relative bg-slate-100">
+        <div class="h-14 bg-white shadow flex items-center justify-between px-6 shrink-0">
+            <h2 class="text-md font-bold text-gray-700">{{ t('resultTitle') }}</h2>
+            <div v-if="schedule.length">
+                <button @click="downloadExcel" class="bg-green-50 text-green-700 px-3 py-1.5 rounded border border-green-200 hover:bg-green-100 transition flex items-center gap-2 text-sm font-bold">
+                    <i class="fas fa-file-excel"></i> {{ t('btnDownload') }}
+                </button>
+            </div>
+        </div>
+        
+        <div class="flex-1 overflow-auto p-6">
+            <div v-if="genErrors.length" class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded shadow-sm">
+                <div class="flex items-center gap-2 text-red-700 font-bold mb-2">
+                    <i class="fas fa-exclamation-triangle"></i> {{ t('errorTitle') }}
+                </div>
+                <ul class="list-disc pl-5 text-xs text-red-600 space-y-1">
+                    <li v-for="err in genErrors">{{ err }}</li>
+                </ul>
+            </div>
+
+            <div v-if="!schedule.length && !genErrors.length" class="flex flex-col items-center justify-center h-full text-gray-400">
+                <div class="text-6xl mb-4 opacity-20"><i class="fas fa-table"></i></div>
+                <p>{{ t('emptyState') }}</p>
+            </div>
+            
+            <div v-else class="space-y-8">
+                <div v-for="day in daysList" :key="day">
+                    <div v-if="scheduleByDay[day] && scheduleByDay[day].length" class="mb-4">
+                        <h3 class="text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 mb-2 uppercase tracking-wider">{{ day }}</h3>
+                        <div class="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
+                            <table class="min-w-full divide-y divide-gray-200 text-sm">
+                                <thead class="bg-gray-800 text-white">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left w-20">{{ t('colType') }}</th>
+                                        <th class="px-4 py-3 text-left w-24">{{ t('colTime') }}</th>
+                                        <th class="px-4 py-3 text-left">{{ t('colGroup') }}</th>
+                                        <th class="px-4 py-3 text-left">{{ t('colSubject') }}</th>
+                                        <th class="px-4 py-3 text-left">{{ t('colTeacher') }}</th>
+                                        <th class="px-4 py-3 text-left">{{ t('colRoom') }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <tr v-for="(row, i) in scheduleByDay[day]" :key="i" class="hover:bg-indigo-50 transition group">
+                                        <td class="px-4 py-3">
+                                            <span class="px-2 py-1 rounded text-xs font-bold border" :class="row.type=='lecture' ? 'bg-red-50 text-red-600 border-red-200' : 'bg-green-50 text-green-600 border-green-200'">{{ row.type == 'lecture' ? t('badgeL') : t('badgeS') }}</span>
+                                        </td>
+                                        <td class="px-4 py-3 font-bold text-gray-700">{{ row.time }}</td>
+                                        <td class="px-4 py-3 font-semibold text-indigo-700">{{ row.group }}</td>
+                                        <td class="px-4 py-3">{{ row.subject }}</td>
+                                        <td class="px-4 py-3 text-gray-500">{{ row.teacher }}</td>
+                                        <td class="px-4 py-3"><span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded border border-yellow-200 text-xs font-bold">{{ row.room }}</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="absolute bottom-6 right-6 z-50 flex flex-col items-end gap-4">
+            <div v-if="showChat" class="w-[500px] h-[600px] bg-white rounded-xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden animate-fade-in">
+                <div class="bg-indigo-700 p-3 text-white flex justify-between items-center">
+                    <span class="font-bold text-sm"><i class="fas fa-robot mr-1"></i> {{ t('aiTitle') }}</span>
+                    <button @click="showChat = false" class="text-white opacity-75 hover:opacity-100">✕</button>
+                </div>
+                <div class="flex-1 p-4 overflow-y-auto space-y-3 bg-gray-50 text-sm" id="chatBox">
+                    <div v-for="msg in chatHistory" :class="msg.role === 'user' ? 'text-right' : 'text-left'">
+                        <div class="inline-block px-3 py-2 rounded-lg max-w-[90%] shadow-sm ai-msg" :class="msg.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-800 border'">
+                             <div v-html="formatMessage(msg.text)"></div>
+                        </div>
+                    </div>
+                    <div v-if="aiLoading" class="text-center text-gray-400 text-xs mt-2"><i class="fas fa-spinner fa-spin"></i> ...</div>
+                </div>
+                <div class="p-3 border-t bg-white flex gap-2">
+                    <input v-model="userQuestion" @keyup.enter="askAI" :placeholder="t('aiPlaceholder')" class="flex-1 p-2 border rounded text-sm outline-none focus:border-indigo-500">
+                    <button @click="askAI" class="bg-indigo-600 text-white px-3 rounded hover:bg-indigo-700">➤</button>
+                </div>
+            </div>
+            <button @click="showChat = !showChat" class="w-14 h-14 bg-indigo-600 rounded-full text-white shadow-lg flex items-center justify-center text-2xl hover:scale-110 transition hover:rotate-12">
+                <i class="fas" :class="showChat ? 'fa-times' : 'fa-comment-dots'"></i>
+            </button>
+        </div>
+    </div>
+
+    <div v-if="showTimeModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white rounded-lg shadow-xl w-[90vw] max-h-[80vh] flex flex-col">
+            <div class="p-4 border-b flex justify-between items-center">
+                <h3 class="font-bold text-lg">📅 {{ t('scheduleTitle') }}: <span class="text-indigo-600">{{ currentModalTeacher }}</span></h3>
+                <button @click="showTimeModal=false" class="text-gray-400 hover:text-gray-600">✕</button>
+            </div>
+            <div class="p-6 overflow-x-auto">
+                <div class="flex gap-4 min-w-max">
+                    <div v-for="day in daysList" class="space-y-2 min-w-[100px]">
+                        <div class="font-bold text-center text-xs uppercase text-gray-400 border-b pb-1">{{ day }}</div>
+                        <div v-for="time in timesList" @click="toggleBusy(day, time)" class="cursor-pointer border rounded p-2 text-center text-xs transition select-none whitespace-nowrap" :class="isBusy(day, time) ? 'bg-red-100 border-red-300 text-red-700 font-bold' : 'bg-gray-50 hover:bg-gray-100 text-gray-600'">{{ time }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 border-t bg-gray-50 text-right"><button @click="showTimeModal=false" class="bg-indigo-600 text-white px-6 py-2 rounded font-bold hover:bg-indigo-700">OK</button></div>
+        </div>
+    </div>
+
+    <div v-if="bulkModal.show" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white rounded-lg shadow-xl w-[500px] flex flex-col">
+            <div class="p-4 border-b flex justify-between items-center">
+                <h3 class="font-bold text-lg">📋 {{ t('modalExcelTitle') }}</h3>
+                <button @click="bulkModal.show=false" class="text-gray-400 hover:text-gray-600">✕</button>
+            </div>
+            <div class="p-4">
+                <div v-if="bulkModal.type=='teachers' || bulkModal.type=='subjects'" class="mb-2 text-xs text-gray-500">{{ t('modalExcelTeachHint') }}</div>
+                <div v-else class="mb-2 text-xs text-gray-500">{{ t('modalExcelGroupHint') }}</div>
+                <textarea v-model="bulkModal.text" rows="10" class="w-full p-2 border rounded text-sm font-mono bg-gray-50" :placeholder="t('modalExcelPlaceholder')"></textarea>
+            </div>
+            <div class="p-4 border-t bg-gray-50 text-right"><button @click="processBulk" class="bg-green-600 text-white px-6 py-2 rounded font-bold hover:bg-green-700">{{ t('btnAdd') }}</button></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const { createApp } = Vue
+    const defaultDaysKZ = 'Дүйсенбі, Сейсенбі, Сәрсенбі, Бейсенбі, Жұма, Сенбі';
+    const defaultDaysRU = 'Понедельник, Вторник, Среда, Четверг, Пятница, Суббота';
+    const defaultTimes = '08:00 - 08:50, 09:00 - 09:50, 10:00 - 10:50, 11:00 - 11:50, 12:00 - 12:50, 13:00 - 13:50, 14:00 - 14:50, 15:00 - 15:50, 16:00 - 16:50, 17:00 - 17:50, 18:00 - 18:50';
+
+    const translations = {
+        ru: {
+            tabData: "1. Данные", tabLessons: "2. Уроки", tabSettings: "3. Настройки", lblTeachers: "Преподаватели", phTeacherName: "ФИО / ТАӘ", lblGroups: "Группы", lblRooms: "Кабинеты", lblSubjects: "Предметы", phName: "Название", phCount: "Чел", phRoomName: "Номер", phCap: "Мест", phSubjectName: "Название предмета", phSubject: "Выберите предмет...", selTeacher: "Учитель...", selGroup: "Группы", typeSem: "Семинар", typeLec: "Лекция", btnAdd: "Добавить", timeSettings: "Звонки и Дни", daysLabel: "Дни недели", timesLabel: "Время звонков", prefs: "Привязка кабинетов", prefsHint: "(для Семинаров)", selRoom: "Кабинет...", btnGen: "Сгенерировать расписание", btnGenLoad: "Генерация...", resultTitle: "Расписание", btnDownload: "Скачать Excel", emptyState: "Нет данных", colTime: "Время", colGroup: "Группы", colSubject: "Предмет", colTeacher: "Преподаватель", colRoom: "Кабинет", colType: "Тип", aiTitle: "AI Ассистент", aiPlaceholder: "Например: Расписание для Ахметова...", aiHello: "Я на связи.", aiUpdated: "Готово!", errorTitle: "Не удалось разместить:", btnExcel: "📋 Excel", modalExcelTitle: "Вставка из Excel", modalExcelTeachHint: "Список (1 столбец)", modalExcelGroupHint: "2 столбца: Имя + Число (необязательно)", modalExcelPlaceholder: "Вставьте данные...", badgeL: "Л", badgeS: "С", scheduleTitle: "График работы", lblSubjectSelect: "Предмет", lblTeachShort: "Преподаватель", lblTypeShort: "Тип", lblHoursShort: "Часы", btnSelectAll: "Выбрать все"
+        },
+        kz: {
+            tabData: "1. Деректер", tabLessons: "2. Сабақтар", tabSettings: "3. Баптау", lblTeachers: "Оқытушылар", phTeacherName: "ФИО / ТАӘ", lblGroups: "Топтар", lblRooms: "Кабинеттер", lblSubjects: "Пәндер", phName: "Атауы", phCount: "Саны", phRoomName: "Нөмір", phCap: "Орын", phSubjectName: "Пән атауы", phSubject: "Пәнді таңдаңыз...", selTeacher: "Мұғалім...", selGroup: "Топтар", typeSem: "Семинар", typeLec: "Дәріс", btnAdd: "Қосу", timeSettings: "Қоңыраулар мен Күндер", daysLabel: "Апта күндері", timesLabel: "Қоңырау уақыты", prefs: "Кабинетті бекіту", prefsHint: "(Семинарлар үшін)", selRoom: "Кабинет...", btnGen: "Кестені құру", btnGenLoad: "Құрылуда...", resultTitle: "Кесте", btnDownload: "Excel жүктеу", emptyState: "Дерек жоқ", colTime: "Уақыт", colGroup: "Топтар", colSubject: "Пән", colTeacher: "Оқытушы", colRoom: "Кабинет", colType: "Түрі", aiTitle: "AI Көмекші", aiPlaceholder: "Мысалы: IT-101 кестесі файл...", aiHello: "Дайынмын.", aiUpdated: "Кесте дайын.", errorTitle: "Орындар табылмады:", btnExcel: "📋 Excel", modalExcelTitle: "Excel-ден енгізу", modalExcelTeachHint: "Тізім (1 баған)", modalExcelGroupHint: "2 баған: Атауы + Саны (міндетті емес)", modalExcelPlaceholder: "Деректерді қойыңыз...", badgeL: "Д", badgeS: "С", scheduleTitle: "Жұмыс кестесі", lblSubjectSelect: "Пән", lblTeachShort: "Оқытушы", lblTypeShort: "Түрі", lblHoursShort: "Сағат", btnSelectAll: "Барлығын таңдау"
+        }
+    };
+
+    window.downloadFromChat = function(encodedData) {
+        const csvContent = decodeURIComponent(encodedData);
+        const BOM = "\uFEFF"; 
+        const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "schedule_ai.csv";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    createApp({
+        data() {
+            return {
+                lang: 'kz', tab: 1,
+                tempTeacher: '', teachers: ['Ахметов'],
+                tempSubject: '', subjects: ['Математика', 'Физика'], 
+                tempGroup: {name: '', size: ''}, groups: [{name: 'IT-101', size: 25}],
+                tempRoom: {name: '', capacity: ''}, rooms: [{name: '101', capacity: 30}],
+                configDays: defaultDaysKZ, configTimes: defaultTimes,
+                prefTeacher: '', prefTeacherRoom: '', teacherPrefs: {},
+                teacherBusy: {}, showTimeModal: false, currentModalTeacher: '',
+                newAssign: { teacher: '', subject: '', count: 1, type: 'seminar' },
+                selectedGroups: [], assignments: [], bulkModal: { show: false, type: '', text: '' },
+                schedule: [], genErrors: [], loading: false,
+                showChat: false, userQuestion: '', chatHistory: [], aiLoading: false
+            }
+        },
+        computed: {
+            daysList() { return this.configDays.split(',').map(s => s.trim()).filter(s => s) },
+            timesList() { return this.configTimes.split(',').map(s => s.trim()).filter(s => s) },
+            scheduleByDay() {
+                const grouped = {};
+                this.schedule.forEach(row => {
+                    if (!grouped[row.day]) grouped[row.day] = [];
+                    grouped[row.day].push(row);
+                });
+                return grouped;
+            }
+        },
+        methods: {
+            t(key) { return translations[this.lang][key] || key; },
+            changeLang(newLang) {
+                this.lang = newLang;
+                if (newLang === 'kz' && this.configDays === defaultDaysRU) this.configDays = defaultDaysKZ;
+                else if (newLang === 'ru' && this.configDays === defaultDaysKZ) this.configDays = defaultDaysRU;
+            },
+            addTeacher() { if(this.tempTeacher) { this.teachers.push(this.tempTeacher); this.tempTeacher=''; } },
+            addSubject() { if(this.tempSubject) { this.subjects.push(this.tempSubject); this.tempSubject=''; } },
+            addGroup() { if(this.tempGroup.name) { this.groups.push({...this.tempGroup, size: this.tempGroup.size||0}); this.tempGroup={name:'', size:''}; } },
+            addRoom() { if(this.tempRoom.name) { this.rooms.push({...this.tempRoom, capacity: this.tempRoom.capacity||9999}); this.tempRoom={name:'', capacity:''}; } },
+            toggleAllGroups() {
+                if (this.selectedGroups.length === this.groups.length) this.selectedGroups = [];
+                else this.selectedGroups = this.groups.map(g => g.name);
+            },
+            addAssignment() {
+                if(this.newAssign.teacher && this.selectedGroups.length && this.newAssign.subject) {
+                    const payload = JSON.parse(JSON.stringify(this.newAssign));
+                    payload.groups = [...this.selectedGroups]; 
+                    this.assignments.push(payload);
+                    this.selectedGroups = [];
+                }
+            },
+            removeAssignment(idx) { this.assignments.splice(idx, 1); },
+            addTeacherPref() { if(this.prefTeacher && this.prefTeacherRoom) this.teacherPrefs[this.prefTeacher] = this.prefTeacherRoom; },
+            openTimeModal(t) { this.currentModalTeacher = t; this.showTimeModal = true; },
+            isBusy(d, t) { return (this.teacherBusy[this.currentModalTeacher] || []).includes(`${d} ${t}`); },
+            toggleBusy(d, t) {
+                const s = `${d} ${t}`;
+                if(!this.teacherBusy[this.currentModalTeacher]) this.teacherBusy[this.currentModalTeacher] = [];
+                const list = this.teacherBusy[this.currentModalTeacher];
+                if(list.includes(s)) this.teacherBusy[this.currentModalTeacher] = list.filter(x => x !== s);
+                else list.push(s);
+            },
+            showBulkModal(type) { this.bulkModal.type = type; this.bulkModal.text = ''; this.bulkModal.show = true; },
+            processBulk() {
+                const lines = this.bulkModal.text.split('\n');
+                lines.forEach(line => {
+                    if(!line.trim()) return;
+                    const parts = line.trim().split(/\t|\s{2,}/);
+                    const name = parts[0].trim();
+                    if (this.bulkModal.type === 'teachers') this.teachers.push(name);
+                    else if (this.bulkModal.type === 'subjects') this.subjects.push(name);
+                    else {
+                        const num = parts.length > 1 ? parseInt(parts[1]) : 0;
+                        if(this.bulkModal.type === 'groups') this.groups.push({name: name, size: num || 0});
+                        else this.rooms.push({name: name, capacity: num || 9999});
+                    }
+                });
+                this.bulkModal.show = false;
+            },
+            async generate() {
+                this.loading = true; this.genErrors = [];
+                const payload = {
+                    teachers: this.teachers, subjects: this.subjects, groups: this.groups, rooms: this.rooms,
+                    assignments: this.assignments, teacher_prefs: this.teacherPrefs,
+                    teacher_busy: this.teacherBusy, days: this.daysList, times: this.timesList
+                };
+                try {
+                    const res = await fetch('http://localhost:8000/generate', {
+                        method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)
+                    });
+                    const data = await res.json();
+                    if(data.status === 'success') {
+                        this.schedule = data.schedule; this.genErrors = data.errors || [];
+                        if (!this.genErrors.length) { this.showChat = true; this.chatHistory.push({role: 'ai', text: this.t('aiUpdated')}); }
+                    } else alert(data.message || "Error");
+                } catch(e) { alert("Server Error"); } finally { this.loading = false; }
+            },
+            downloadExcel() {
+                const BOM = "\uFEFF"; 
+                let csv = `${this.t('colType')},${this.t('colTime')},${this.t('colGroup')},${this.t('colSubject')},${this.t('colTeacher')},${this.t('colRoom')}\n`;
+                this.schedule.forEach(row => csv += `${row.type},${row.slot},"${row.group}",${row.subject},${row.teacher},${row.room}\n`);
+                const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = "schedule.csv"; link.click();
+            },
+            async askAI() {
+                if(!this.userQuestion.trim()) return;
+                const q = this.userQuestion; this.userQuestion = '';
+                this.chatHistory.push({role: 'user', text: q}); this.aiLoading = true;
+                this.$nextTick(() => document.getElementById('chatBox').scrollTop = 9999);
+                try {
+                    const res = await fetch('http://localhost:8000/ask_ai', {
+                        method: 'POST', headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ question: q, schedule_context: JSON.stringify(this.schedule), lang: this.lang })
+                    });
+                    const data = await res.json();
+                    this.chatHistory.push({role: 'ai', text: data.answer});
+                } catch(e) { this.chatHistory.push({role: 'ai', text: 'AI Error'}); } finally { this.aiLoading = false; this.$nextTick(() => document.getElementById('chatBox').scrollTop = 9999); }
+            },
+            formatMessage(t) { 
+                let html = t;
+                if (html.includes(':::csv_start:::')) {
+                    const start = html.indexOf(':::csv_start:::');
+                    const end = html.indexOf(':::csv_end:::');
+                    if (end > start) {
+                        const csvData = html.substring(start + 15, end).trim();
+                        const encoded = encodeURIComponent(csvData);
+                        const buttonHtml = `<button onclick="window.downloadFromChat('${encoded}')" class="chat-download-btn"><i class="fas fa-file-excel"></i> ${this.t('btnDownload')}</button>`;
+                        html = html.substring(0, start) + buttonHtml + html.substring(end + 13);
+                    }
+                }
+                return html.replace(/\n/g, '<br>').replace(/\|/g, '</td><td>').replace(/^<br>/, '').replace(/(.*?)<\/td><td>(.*?)<\/td><td>/g, '<tr><td>$1</td><td>$2</td></tr>').replace(/<\/td><td><br>/g, '</td></tr>');
+            } 
+        }
+    }).mount('#app')
+</script>
+</body>
+</html>
