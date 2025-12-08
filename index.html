@@ -459,7 +459,7 @@
                     teacher_busy: this.teacherBusy, days: this.daysList, times: this.timesList
                 };
                 try {
-                    const res = await fetch('http://localhost:8000/generate', {
+                    const res = await fetch('https://unishedai.onrender.com/generate', {
                         method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)
                     });
                     const data = await res.json();
@@ -482,7 +482,7 @@
                 this.chatHistory.push({role: 'user', text: q}); this.aiLoading = true;
                 this.$nextTick(() => document.getElementById('chatBox').scrollTop = 9999);
                 try {
-                    const res = await fetch('http://localhost:8000/ask_ai', {
+                    const res = await fetch('https://unishedai.onrender.com/ask_ai', {
                         method: 'POST', headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify({ question: q, schedule_context: JSON.stringify(this.schedule), lang: this.lang })
                     });
