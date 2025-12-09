@@ -248,7 +248,7 @@ def ask_ai(payload: ChatRequest):
     """
     
     try:
-        model = genai.GenerativeModel('gemini-1.5-flash') 
+        model = genai.GenerativeModel('gemini-2.5-flash') 
         response = model.generate_content(prompt)
         return {"answer": response.text}
     except Exception as e:
@@ -257,4 +257,5 @@ def ask_ai(payload: ChatRequest):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=port)
+
 
