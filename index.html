@@ -23,7 +23,6 @@
     
     <!-- SIDEBAR -->
     <div class="w-[500px] bg-white shadow-2xl z-20 flex flex-col h-full border-r flex-shrink-0">
-        <!-- HEADER БҰРЫНҒЫДАЙ... -->
         <div class="p-4 bg-indigo-700 text-white flex justify-between items-center shrink-0">
             <h1 class="text-lg font-bold"><i class="fas fa-calendar-check mr-2"></i>UniSched AI</h1>
             <div class="text-xs font-bold bg-indigo-800 rounded p-1 flex gap-2 cursor-pointer">
@@ -39,14 +38,12 @@
         </div>
 
         <div class="flex-1 overflow-y-auto p-4 space-y-6 bg-white">
+            
             <!-- TAB 1: DATA -->
             <div v-if="tab===1" class="space-y-6">
-                
-                <!-- Оқытушылар блогы (Бұрынғыдай) -->
+                <!-- Оқытушылар -->
                 <div>
-                    <div class="flex justify-between items-end mb-1">
-                        <label class="text-xs font-bold text-gray-500 uppercase">{{ t('lblTeachers') }}</label>
-                    </div>
+                    <label class="text-xs font-bold text-gray-500 uppercase block mb-1">{{ t('lblTeachers') }}</label>
                     <div class="flex gap-2 mb-2">
                         <input v-model="tempTeacher" @keyup.enter="addTeacher" class="flex-1 p-2 border rounded text-sm" :placeholder="t('phTeacherName')">
                         <button @click="addTeacher" class="bg-indigo-100 text-indigo-700 px-3 rounded font-bold">+</button>
@@ -61,16 +58,25 @@
                 </div>
                 <hr>
                 
-                <!-- Пәндер блогы (Бұрынғыдай) -->
+                <!-- Пәндер -->
                 <div>
-                    <!-- ... пәндер коды осында ... -->
-                </div>
-                
-                <!-- ТОПТАР БЛОГЫ (ЖАҢАРТЫЛДЫ: Сағат кнопкасы қосылды) -->
-                <div>
-                    <div class="flex justify-between items-end mb-1">
-                        <label class="text-xs font-bold text-gray-500 uppercase">{{ t('lblGroups') }}</label>
+                    <label class="text-xs font-bold text-gray-500 uppercase block mb-1">{{ t('lblSubjects') }}</label>
+                    <div class="flex gap-2 mb-2">
+                        <input v-model="tempSubject" @keyup.enter="addSubject" class="flex-1 p-2 border rounded text-sm" :placeholder="t('phSubjectName')">
+                        <button @click="addSubject" class="bg-indigo-100 text-indigo-700 px-3 rounded font-bold">+</button>
                     </div>
+                    <div class="flex flex-wrap gap-2">
+                        <div v-for="(sub, idx) in subjects" :key="idx" class="bg-gray-50 px-2 py-1 rounded text-sm flex items-center gap-2 border">
+                            <span>{{ sub }}</span>
+                            <button @click="subjects.splice(idx, 1)" class="text-red-400 hover:text-red-600">×</button>
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                
+                <!-- Топтар -->
+                <div>
+                    <label class="text-xs font-bold text-gray-500 uppercase block mb-1">{{ t('lblGroups') }}</label>
                     <div class="bg-gray-50 p-2 rounded border space-y-2">
                         <div class="flex gap-2">
                             <input v-model="tempGroup.name" class="flex-1 p-1 border rounded text-sm" :placeholder="t('phName')">
@@ -78,10 +84,9 @@
                             <button @click="addGroup" class="bg-green-100 text-green-700 px-3 rounded font-bold">+</button>
                         </div>
                         <div class="max-h-32 overflow-y-auto space-y-1">
-                            <div v-for="(g, i) in groups" class="flex items-center gap-2 bg-white p-1 px-2 border rounded text-sm">
+                            <div v-for="(g, i) in groups" :key="i" class="flex items-center gap-2 bg-white p-1 px-2 border rounded text-sm">
                                 <span class="flex-1">{{ g.name }}</span>
-                                <span class="text-xs text-gray-400 mr-2">{{ g.size || 0 }}</span>
-                                <!-- ТОПТАРҒА АРНАЛҒАН САҒАТ КНОПКАСЫ -->
+                                <span class="text-xs text-gray-400 mr-2">({{ g.size || 0 }})</span>
                                 <button @click="openTimeModal(g.name, 'group')" :class="groupBusy[g.name] && groupBusy[g.name].length ? 'text-red-500' : 'text-gray-400'" class="hover:text-indigo-700 transition"><i class="fas fa-clock"></i></button>
                                 <button @click="groups.splice(i, 1)" class="text-red-400 hover:text-red-600">×</button>
                             </div>
@@ -90,15 +95,110 @@
                 </div>
                 <hr>
 
-                <!-- Кабинеттер (Бұрынғыдай) -->
+                <!-- Кабинеттер -->
                 <div>
-                   <!-- ... Кабинет коды ... -->
+                    <label class="text-xs font-bold text-gray-500 uppercase block mb-1">{{ t('lblRooms') }}</label>
+                    <div class="bg-gray-50 p-2 rounded border space-y-2">
+                        <div class="flex gap-2">
+                            <input v-model="tempRoom.name" class="flex-1 p-1 border rounded text-sm" :placeholder="t('phName')">
+                            <input v-model.number="tempRoom.capacity" type="number" class="w-16 p-1 border rounded text-sm text-center" :placeholder="t('phCap')">
+                            <button @click="addRoom" class="bg-green-100 text-green-700 px-3 rounded font-bold">+</button>
+                        </div>
+                        <div class="max-h-32 overflow-y-auto space-y-1">
+                            <div v-for="(r, i) in rooms" :key="i" class="flex items-center gap-2 bg-white p-1 px-2 border rounded text-sm">
+                                <span class="flex-1">{{ r.name }}</span>
+                                <span class="text-xs text-gray-400 mr-2">мүд: {{ r.capacity || '?' }}</span>
+                                <button @click="openTimeModal(r.name, 'room')" :class="roomBusy[r.name] && roomBusy[r.name].length ? 'text-red-500' : 'text-gray-400'" class="hover:text-indigo-700 transition"><i class="fas fa-clock"></i></button>
+                                <button @click="rooms.splice(i, 1)" class="text-red-400 hover:text-red-600">×</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- TAB 2 мен TAB 3 бұрынғыдай... -->
-            <!-- ... -->
-            
+            <!-- TAB 2: LESSONS / ASSIGNMENTS -->
+            <div v-if="tab===2" class="space-y-6">
+                <div class="bg-gray-50 p-3 rounded-lg border space-y-3">
+                    <h3 class="font-bold text-sm text-indigo-700">{{ t('addAssignTitle') }}</h3>
+                    <div>
+                        <label class="text-xs font-bold text-gray-500">{{ t('lblTeacher') }}</label>
+                        <select v-model="newAssign.teacher" class="w-full p-2 border rounded text-sm bg-white">
+                            <option v-for="t in teachers" :value="t">{{ t }}</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-500">{{ t('lblSubject') }}</label>
+                        <select v-model="newAssign.subject" class="w-full p-2 border rounded text-sm bg-white">
+                            <option v-for="s in subjects" :value="s">{{ s }}</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-500">{{ t('lblType') }}</label>
+                        <select v-model="newAssign.type" class="w-full p-2 border rounded text-sm bg-white">
+                            <option value="seminar">{{ t('typeSeminar') }}</option>
+                            <option value="lecture">{{ t('typeLecture') }}</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-500">{{ t('lblCount') }}</label>
+                        <input v-model.number="newAssign.count" type="number" min="1" class="w-full p-2 border rounded text-sm bg-white">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 block mb-1">{{ t('lblSelectGroups') }}</label>
+                        <div class="max-h-32 overflow-y-auto border p-2 rounded bg-white space-y-1">
+                            <div v-for="g in groups" class="flex items-center gap-2 text-sm">
+                                <input type="checkbox" :value="g.name" v-model="selectedGroups">
+                                <span>{{ g.name }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button @click="addAssignment" class="w-full bg-indigo-600 text-white p-2 rounded font-bold text-sm hover:bg-indigo-700">{{ t('btnAdd') }}</button>
+                </div>
+
+                <div class="space-y-2">
+                    <h3 class="font-bold text-sm text-gray-600">{{ t('assignList') }}</h3>
+                    <div v-for="(asgn, idx) in assignments" :key="idx" class="bg-white border p-3 rounded shadow-sm text-sm relative">
+                        <button @click="assignments.splice(idx, 1)" class="absolute top-2 right-2 text-red-400 hover:text-red-600">×</button>
+                        <div class="font-bold text-indigo-700">{{ asgn.subject }} <span class="text-xs font-normal bg-gray-100 px-1 rounded">{{ asgn.type }}</span></div>
+                        <div class="text-xs text-gray-600 mt-1">👨‍🏫 {{ asgn.teacher }} | 🔢 {{ asgn.count }} рет</div>
+                        <div class="text-xs text-gray-500 mt-1">👥 {{ asgn.groups.join(', ') }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: SETTINGS -->
+            <div v-if="tab===3" class="space-y-6">
+                <div>
+                    <label class="text-xs font-bold text-gray-500 uppercase block mb-1">{{ t('lblDays') }}</label>
+                    <input v-model="configDays" class="w-full p-2 border rounded text-sm">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-500 uppercase block mb-1">{{ t('lblTimes') }}</label>
+                    <input v-model="configTimes" class="w-full p-2 border rounded text-sm">
+                </div>
+                <hr>
+                <div>
+                    <h3 class="font-bold text-sm text-indigo-700 mb-2">{{ t('prefTitle') }}</h3>
+                    <div class="space-y-2 bg-gray-50 p-3 rounded border">
+                        <select v-model="prefTeacher" class="w-full p-2 border rounded text-sm bg-white">
+                            <option value="">{{ t('selectTeacher') }}</option>
+                            <option v-for="t in teachers" :value="t">{{ t }}</option>
+                        </select>
+                        <select v-model="prefTeacherRoom" class="w-full p-2 border rounded text-sm bg-white">
+                            <option value="">{{ t('selectRoom') }}</option>
+                            <option v-for="r in rooms" :value="r.name">{{ r.name }}</option>
+                        </select>
+                        <button @click="savePref" class="w-full bg-gray-800 text-white p-2 rounded text-sm font-bold">{{ t('savePref') }}</button>
+                    </div>
+                    <div class="mt-2 space-y-1">
+                        <div v-for="(room, teach) in teacherPrefs" class="flex justify-between items-center text-xs bg-white border p-2 rounded">
+                            <span><b>{{ teach }}</b> ➔ Кабинет: {{ room }}</span>
+                            <button @click="delete teacherPrefs[teach]" class="text-red-400">×</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
         
         <div class="p-4 border-t bg-gray-50 shrink-0">
@@ -109,25 +209,79 @@
         </div>
     </div>
 
-    <!-- MAIN CONTENT БҰРЫНҒЫДАЙ ... -->
-    
-    <!-- MODAL ТАЙМИНГ (Оқытушы, Топ, Кабинет үшеуіне ортақ) -->
+    <!-- MAIN CONTENT (SCHEDULE & CHAT) -->
+    <div class="flex-1 flex flex-col h-full bg-slate-50 overflow-hidden">
+        <div class="p-4 bg-white border-b flex justify-between items-center shrink-0 shadow-sm">
+            <div class="flex gap-4">
+                <div class="text-sm font-bold text-indigo-900 flex items-center gap-2">
+                    <i class="fas fa-table text-indigo-600"></i> Жалпы сабақтар: {{ schedule.length }}
+                </div>
+                <div v-if="genErrors.length > 0" class="text-sm font-bold text-red-600 flex items-center gap-1">
+                    <i class="fas fa-exclamation-triangle"></i> Қателер: {{ genErrors.length }}
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button @click="exportExcel" class="bg-green-600 text-white px-3 py-1.5 rounded text-sm font-bold hover:bg-green-700 transition flex items-center gap-1">
+                    <i class="fas fa-file-excel"></i> Excel
+                </button>
+            </div>
+        </div>
+
+        <div class="flex-1 overflow-auto p-6 space-y-6">
+            <div v-if="schedule.length === 0 && !loading" class="text-center py-20 text-gray-400">
+                <i class="fas fa-calendar-alt text-5xl mb-3"></i>
+                <p>{{ t('noScheduleYet') }}</p>
+            </div>
+
+            <!-- Schedule Grid -->
+            <div v-if="schedule.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div v-for="day in daysList" :key="day" class="bg-white rounded-xl shadow-md border overflow-hidden flex flex-col">
+                    <div class="bg-indigo-600 text-white px-4 py-2 font-bold text-sm flex justify-between items-center">
+                        <span>{{ day }}</span>
+                        <span class="text-xs bg-indigo-800 px-2 py-0.5 rounded">{{ schedule.filter(s => s.day === day).length }} сабақ</span>
+                    </div>
+                    <div class="p-3 space-y-2 flex-1 overflow-y-auto max-h-[550px]">
+                        <div v-for="item in schedule.filter(s => s.day === day)" :key="item.slot + item.teacher" class="border rounded-lg p-2.5 text-sm bg-gray-50 hover:bg-indigo-50 transition border-l-4 border-l-indigo-500">
+                            <div class="flex justify-between font-bold text-xs text-indigo-600 mb-1">
+                                <span>🕒 {{ item.time }}</span>
+                                <span class="bg-indigo-100 text-indigo-800 px-1.5 py-0.5 rounded text-[10px]">{{ item.type }}</span>
+                            </div>
+                            <div class="font-bold text-slate-800">{{ item.subject }}</div>
+                            <div class="text-xs text-gray-600 mt-1 flex flex-wrap gap-x-3">
+                                <span>👨‍🏫 {{ item.teacher }}</span>
+                                <span>👥 {{ item.group }}</span>
+                                <span>🚪 Каб: {{ item.room }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Errors list -->
+            <div v-if="genErrors.length > 0" class="bg-red-50 border border-red-200 rounded-xl p-4">
+                <h4 class="font-bold text-red-700 mb-2 text-sm"><i class="fas fa-info-circle mr-1"></i> Орналаспаған сабақтар (Қателер):</h4>
+                <ul class="list-disc list-inside text-xs text-red-600 space-y-1">
+                    <li v-for="err in genErrors">{{ err }}</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL TIME -->
     <div v-if="showTimeModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center backdrop-blur-sm">
         <div class="bg-white rounded-lg shadow-xl w-[90vw] max-h-[80vh] flex flex-col">
             <div class="p-4 border-b flex justify-between items-center">
                 <h3 class="font-bold text-lg">
-                    📅 {{ t('scheduleTitle') }}: 
-                    <span class="text-indigo-600">{{ currentModalName }}</span>
-                    <!-- Кімге/неге баптап жатқанын көрсету -->
-                    <span class="text-xs text-gray-400 ml-2">({{ currentModalType === 'teacher' ? 'Оқытушы' : (currentModalType === 'group' ? 'Топ' : 'Кабинет') }})</span>
+                    📅 Уақытты баптау: <span class="text-indigo-600">{{ currentModalName }}</span>
+                    <span class="text-xs text-gray-400 ml-2">({{ currentModalType }})</span>
                 </h3>
                 <button @click="showTimeModal=false" class="text-gray-400 hover:text-gray-600">✕</button>
             </div>
             <div class="p-6 overflow-x-auto">
                 <div class="flex gap-4 min-w-max">
-                    <div v-for="day in daysList" class="space-y-2 min-w-[100px]">
+                    <div v-for="day in daysList" :key="day" class="space-y-2 min-w-[100px]">
                         <div class="font-bold text-center text-xs uppercase text-gray-400 border-b pb-1">{{ day }}</div>
-                        <div v-for="time in timesList" @click="toggleBusy(day, time)" class="cursor-pointer border rounded p-2 text-center text-xs transition select-none whitespace-nowrap" :class="isBusy(day, time) ? 'bg-red-100 border-red-300 text-red-700 font-bold' : 'bg-gray-50 hover:bg-gray-100 text-gray-600'">{{ time }}</div>
+                        <div v-for="time in timesList" :key="time" @click="toggleBusy(day, time)" class="cursor-pointer border rounded p-2 text-center text-xs transition select-none whitespace-nowrap" :class="isBusy(day, time) ? 'bg-red-100 border-red-300 text-red-700 font-bold' : 'bg-gray-50 hover:bg-gray-100 text-gray-600'">{{ time }}</div>
                     </div>
                 </div>
             </div>
@@ -138,19 +292,51 @@
 
 <script>
     const { createApp } = Vue
-    // ... тіл аудармалары (translations) бұрынғыдай ...
+
+    const defaultDaysKZ = "Дүйсенбі, Сейсенбі, Сәрсенбі, Бейсенбі, Жұма"
+    const defaultDaysRU = "Понедельник, Вторник, Среда, Четверг, Пятница"
+    const defaultTimes = "08:30-09:50, 10:00-11:20, 11:30-12:50, 13:30-14:50, 15:00-16:20"
+
+    const translations = {
+        kz: {
+            tabData: "Мәліметтер", tabLessons: "Сабақтар", tabSettings: "Баптаулар",
+            lblTeachers: "Оқытушылар", phTeacherName: "Оқытушы аты...",
+            lblSubjects: "Пәндер", phSubjectName: "Пән атауы...",
+            lblGroups: "Топтар", phName: "Атауы", phCount: "Студ.",
+            lblRooms: "Кабинеттер", phCap: "Сыйым.",
+            addAssignTitle: "Жаңа жүктеме қосу", lblTeacher: "Оқытушы", lblSubject: "Пән",
+            lblType: "Түрі", typeSeminar: "Семинар / Практика", typeLecture: "Лекция (Ағым)",
+            lblCount: "Апталық сағат саны", lblSelectGroups: "Топтарды таңдаңыз", btnAdd: "Қосу",
+            assignList: "Жүктемелер тізімі", lblDays: "Күндер (үтірмен)", lblTimes: "Сабақ уақыттары",
+            prefTitle: "Оқытушы кабинеті", selectTeacher: "Оқытушыны таңдаңыз", selectRoom: "Кабинетті таңдаңыз",
+            savePref: "Сақтау", btnGen: "✨ Кесте жасау", btnGenLoad: "Жасалуда...", noScheduleYet: "Әзірге кесте жасалған жоқ. Сол жақтан деректерді енгізіп, батырманы басыңыз."
+        },
+        ru: {
+            tabData: "Данные", tabLessons: "Нагрузка", tabSettings: "Настройки",
+            lblTeachers: "Преподаватели", phTeacherName: "Имя преподавателя...",
+            lblSubjects: "Предметы", phSubjectName: "Название предмета...",
+            lblGroups: "Группы", phName: "Имя", phCount: "Студ.",
+            lblRooms: "Аудитории", phCap: "Вмест.",
+            addAssignTitle: "Добавить нагрузку", lblTeacher: "Преподаватель", lblSubject: "Предмет",
+            lblType: "Тип", typeSeminar: "Семинар / Практика", typeLecture: "Лекция (Поток)",
+            lblCount: "Кол-во в неделю", lblSelectGroups: "Выберите группы", btnAdd: "Добавить",
+            assignList: "Список нагрузки", lblDays: "Дни (через запятую)", lblTimes: "Время звонков",
+            prefTitle: "Предпочтения кабинета", selectTeacher: "Выберите преподавателя", selectRoom: "Выберите аудиторию",
+            savePref: "Сохранить", btnGen: "✨ Создать расписание", btnGenLoad: "Генерация...", noScheduleYet: "Расписание еще не создано. Заполните данные слева и нажмите кнопку."
+        }
+    }
 
     createApp({
         data() {
             return {
                 lang: 'kz', tab: 1,
-                tempTeacher: '', teachers: ['Ахметов'],
+                tempTeacher: '', teachers: ['Ахметов А.Б.'],
                 tempSubject: '', subjects: ['Математика'], 
-                tempGroup: {name: '', size: ''}, groups: [{name: 'IT-101', size: 25}],
-                tempRoom: {name: '', capacity: ''}, rooms: [{name: '101', capacity: 30}],
+                tempGroup: {name: '', size: ''}, groups: [{name: 'МТ-101', size: 25}],
+                tempRoom: {name: '', capacity: ''}, rooms: [{name: '201', capacity: 30}],
                 configDays: defaultDaysKZ, configTimes: defaultTimes,
                 prefTeacher: '', prefTeacherRoom: '', teacherPrefs: {},
-                teacherBusy: {}, roomBusy: {}, groupBusy: {}, // ЖАҢА: groupBusy
+                teacherBusy: {}, roomBusy: {}, groupBusy: {},
                 showTimeModal: false, currentModalName: '', currentModalType: 'teacher',
                 newAssign: { teacher: '', subject: '', count: 1, type: 'seminar' },
                 selectedGroups: [], assignments: [],
@@ -160,16 +346,16 @@
         computed: {
             daysList() { return this.configDays.split(',').map(s => s.trim()).filter(s => s) },
             timesList() { return this.configTimes.split(',').map(s => s.trim()).filter(s => s) },
-            // ... қалғандары бұрынғыдай ...
         },
         mounted() {
             const savedData = localStorage.getItem('uniSchedData');
             if (savedData) {
-                const parsed = JSON.parse(savedData);
-                // ЖАҢА: groupBusy оқу
-                ['teachers', 'subjects', 'groups', 'rooms', 'assignments', 'teacherPrefs', 'teacherBusy', 'roomBusy', 'groupBusy', 'configDays', 'configTimes'].forEach(key => {
-                    if (parsed[key]) this[key] = parsed[key];
-                });
+                try {
+                    const parsed = JSON.parse(savedData);
+                    ['teachers', 'subjects', 'groups', 'rooms', 'assignments', 'teacherPrefs', 'teacherBusy', 'roomBusy', 'groupBusy', 'configDays', 'configTimes'].forEach(key => {
+                        if (parsed[key]) this[key] = parsed[key];
+                    });
+                } catch(e) { console.error("Load error", e); }
             }
         },
         watch: {
@@ -178,7 +364,7 @@
                     const toSave = {
                         teachers: this.teachers, subjects: this.subjects, groups: this.groups,
                         rooms: this.rooms, assignments: this.assignments, teacherPrefs: this.teacherPrefs,
-                        teacherBusy: this.teacherBusy, roomBusy: this.roomBusy, groupBusy: this.groupBusy, // ЖАҢА
+                        teacherBusy: this.teacherBusy, roomBusy: this.roomBusy, groupBusy: this.groupBusy,
                         configDays: this.configDays, configTimes: this.configTimes
                     };
                     localStorage.setItem('uniSchedData', JSON.stringify(toSave));
@@ -187,11 +373,57 @@
             }
         },
         methods: {
-            // ... басқа методтар бұрынғыдай ...
-            
+            t(key) { return translations[this.lang][key] || key; },
+            changeLang(l) {
+                this.lang = l;
+                if(l === 'ru' && this.configDays === defaultDaysKZ) this.configDays = defaultDaysRU;
+                if(l === 'kz' && this.configDays === defaultDaysRU) this.configDays = defaultDaysKZ;
+            },
+            addTeacher() {
+                if(this.tempTeacher.trim() && !this.teachers.includes(this.tempTeacher.trim())) {
+                    this.teachers.push(this.tempTeacher.trim()); this.tempTeacher = '';
+                }
+            },
+            addSubject() {
+                if(this.tempSubject.trim() && !this.subjects.includes(this.tempSubject.trim())) {
+                    this.subjects.push(this.tempSubject.trim()); this.tempSubject = '';
+                }
+            },
+            addGroup() {
+                if(this.tempGroup.name.trim()) {
+                    this.groups.push({name: this.tempGroup.name.trim(), size: Number(this.tempGroup.size) || 0});
+                    this.tempGroup = {name: '', size: ''};
+                }
+            },
+            addRoom() {
+                if(this.tempRoom.name.trim()) {
+                    this.rooms.push({name: this.tempRoom.name.trim(), capacity: Number(this.tempRoom.capacity) || 99});
+                    this.tempRoom = {name: '', capacity: ''};
+                }
+            },
+            addAssignment() {
+                if(!this.newAssign.teacher || !this.newAssign.subject || this.selectedGroups.length === 0) {
+                    alert("Барлық өрістерді толтырыңыз және кем дегенде бір топ таңдаңыз!");
+                    return;
+                }
+                this.assignments.push({
+                    teacher: this.newAssign.teacher,
+                    groups: [...this.selectedGroups],
+                    subject: this.newAssign.subject,
+                    count: this.newAssign.count,
+                    type: this.newAssign.type
+                });
+                this.selectedGroups = [];
+            },
+            savePref() {
+                if(this.prefTeacher && this.prefTeacherRoom) {
+                    this.teacherPrefs[this.prefTeacher] = this.prefTeacherRoom;
+                    this.prefTeacher = ''; this.prefTeacherRoom = '';
+                }
+            },
             openTimeModal(name, type) { 
                 this.currentModalName = name; 
-                this.currentModalType = type; // 'teacher', 'room', 'group'
+                this.currentModalType = type; 
                 this.showTimeModal = true; 
             },
             isBusy(d, t) { 
@@ -215,17 +447,16 @@
                 if(list.includes(s)) targetDict[this.currentModalName] = list.filter(x => x !== s);
                 else list.push(s);
             },
-            
             async generate() {
                 this.loading = true; this.genErrors = []; this.schedule = [];
                 const payload = {
                     teachers: this.teachers, subjects: this.subjects, groups: this.groups, rooms: this.rooms,
                     assignments: this.assignments, teacher_prefs: this.teacherPrefs,
-                    teacher_busy: this.teacherBusy, room_busy: this.roomBusy, group_busy: this.groupBusy, // ЖАҢА: group_busy қосылды
+                    teacher_busy: this.teacherBusy, room_busy: this.roomBusy, group_busy: this.groupBusy,
                     days: this.daysList, times: this.timesList
                 };
                 try {
-                    const res = await fetch('http://localhost:8000/generate', {
+                    const res = await fetch('https://unishedai.onrender.com/generate', {
                         method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)
                     });
                     const data = await res.json();
@@ -233,6 +464,20 @@
                         this.schedule = data.schedule; this.genErrors = data.errors || [];
                     } else alert(data.message || "Error");
                 } catch(e) { alert("Серверге қосылу қателігі"); } finally { this.loading = false; }
+            },
+            exportExcel() {
+                if(this.schedule.length === 0) return alert("Экспорттау үшін кесте бос болмауы керек!");
+                let csv = "\uFEFFКүн;Уақыт;Пән;Түрі;Оқытушы;Топ;Кабинет\n";
+                this.schedule.forEach(s => {
+                    csv += `${s.day};${s.time};${s.subject};${s.type};${s.teacher};${s.group};${s.room}\n`;
+                });
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.setAttribute("download", "schedule.csv");
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
             }
         }
     }).mount('#app')
