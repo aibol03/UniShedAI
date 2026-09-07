@@ -14,7 +14,6 @@
         .ai-msg table { width: 100%; border-collapse: collapse; font-size: 0.85em; margin-top: 8px; background: white; border-radius: 4px; border: 1px solid #e2e8f0; }
         .ai-msg th, .ai-msg td { border: 1px solid #e2e8f0; padding: 6px; text-align: left; }
         .ai-msg th { background: #4f46e5; color: white; font-weight: 600; }
-        .chat-download-btn { display: inline-flex; align-items: center; gap: 8px; background-color: #10b981; color: white; padding: 8px 16px; border-radius: 6px; font-weight: bold; text-decoration: none; margin-top: 8px; cursor: pointer; border: 1px solid #059669; }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800 h-screen overflow-hidden font-sans">
@@ -22,11 +21,11 @@
 <div id="app" class="flex h-full relative">
     
     <!-- SIDEBAR -->
-    <div class="w-[500px] bg-white shadow-2xl z-20 flex flex-col h-full border-r flex-shrink-0">
+    <div class="w-[450px] bg-white shadow-2xl z-20 flex flex-col h-full border-r flex-shrink-0">
         <div class="p-4 bg-indigo-700 text-white flex justify-between items-center shrink-0">
             <h1 class="text-lg font-bold"><i class="fas fa-calendar-check mr-2"></i>UniSched AI</h1>
             <div class="text-xs font-bold bg-indigo-800 rounded p-1 flex gap-2 cursor-pointer">
-                <span @click="changeLang('kz')" :class="{'text-yellow-300': lang==='kz', 'opacity-50': lang!=='kz'}">KZ</span><span class="opacity-50">|</span>
+                <span @click="changeLang('kz')" :class="{'text-yellow-300': lang==='kz', 'opacity-50': lang!=='kz'}">KZ</span><span>|</span>
                 <span @click="changeLang('ru')" :class="{'text-yellow-300': lang==='ru', 'opacity-50': lang!=='ru'}">RU</span>
             </div>
         </div>
@@ -41,7 +40,6 @@
             
             <!-- TAB 1: DATA -->
             <div v-if="tab===1" class="space-y-6">
-                <!-- Оқытушылар -->
                 <div>
                     <label class="text-xs font-bold text-gray-500 uppercase block mb-1">{{ t('lblTeachers') }}</label>
                     <div class="flex gap-2 mb-2">
@@ -58,7 +56,6 @@
                 </div>
                 <hr>
                 
-                <!-- Пәндер -->
                 <div>
                     <label class="text-xs font-bold text-gray-500 uppercase block mb-1">{{ t('lblSubjects') }}</label>
                     <div class="flex gap-2 mb-2">
@@ -74,7 +71,6 @@
                 </div>
                 <hr>
                 
-                <!-- Топтар -->
                 <div>
                     <label class="text-xs font-bold text-gray-500 uppercase block mb-1">{{ t('lblGroups') }}</label>
                     <div class="bg-gray-50 p-2 rounded border space-y-2">
@@ -95,7 +91,6 @@
                 </div>
                 <hr>
 
-                <!-- Кабинеттер -->
                 <div>
                     <label class="text-xs font-bold text-gray-500 uppercase block mb-1">{{ t('lblRooms') }}</label>
                     <div class="bg-gray-50 p-2 rounded border space-y-2">
@@ -107,7 +102,7 @@
                         <div class="max-h-32 overflow-y-auto space-y-1">
                             <div v-for="(r, i) in rooms" :key="i" class="flex items-center gap-2 bg-white p-1 px-2 border rounded text-sm">
                                 <span class="flex-1">{{ r.name }}</span>
-                                <span class="text-xs text-gray-400 mr-2">мүд: {{ r.capacity || '?' }}</span>
+                                <span class="text-xs text-gray-400 mr-2">сыйым: {{ r.capacity || '?' }}</span>
                                 <button @click="openTimeModal(r.name, 'room')" :class="roomBusy[r.name] && roomBusy[r.name].length ? 'text-red-500' : 'text-gray-400'" class="hover:text-indigo-700 transition"><i class="fas fa-clock"></i></button>
                                 <button @click="rooms.splice(i, 1)" class="text-red-400 hover:text-red-600">×</button>
                             </div>
@@ -116,7 +111,7 @@
                 </div>
             </div>
 
-            <!-- TAB 2: LESSONS / ASSIGNMENTS -->
+            <!-- TAB 2: LESSONS -->
             <div v-if="tab===2" class="space-y-6">
                 <div class="bg-gray-50 p-3 rounded-lg border space-y-3">
                     <h3 class="font-bold text-sm text-indigo-700">{{ t('addAssignTitle') }}</h3>
@@ -209,7 +204,7 @@
         </div>
     </div>
 
-    <!-- MAIN CONTENT (SCHEDULE & CHAT) -->
+    <!-- MAIN CONTENT & AI CHAT -->
     <div class="flex-1 flex flex-col h-full bg-slate-50 overflow-hidden">
         <div class="p-4 bg-white border-b flex justify-between items-center shrink-0 shadow-sm">
             <div class="flex gap-4">
@@ -220,16 +215,14 @@
                     <i class="fas fa-exclamation-triangle"></i> Қателер: {{ genErrors.length }}
                 </div>
             </div>
-            <div class="flex gap-2">
-                <button @click="exportExcel" class="bg-green-600 text-white px-3 py-1.5 rounded text-sm font-bold hover:bg-green-700 transition flex items-center gap-1">
-                    <i class="fas fa-file-excel"></i> Excel
-                </button>
-            </div>
+            <button @click="exportExcel" class="bg-green-600 text-white px-3 py-1.5 rounded text-sm font-bold hover:bg-green-700 transition flex items-center gap-1">
+                <i class="fas fa-file-excel"></i> Excel
+            </button>
         </div>
 
         <div class="flex-1 overflow-auto p-6 space-y-6">
-            <div v-if="schedule.length === 0 && !loading" class="text-center py-20 text-gray-400">
-                <i class="fas fa-calendar-alt text-5xl mb-3"></i>
+            <div v-if="schedule.length === 0 && !loading" class="text-center py-10 text-gray-400">
+                <i class="fas fa-calendar-alt text-4xl mb-3"></i>
                 <p>{{ t('noScheduleYet') }}</p>
             </div>
 
@@ -240,7 +233,7 @@
                         <span>{{ day }}</span>
                         <span class="text-xs bg-indigo-800 px-2 py-0.5 rounded">{{ schedule.filter(s => s.day === day).length }} сабақ</span>
                     </div>
-                    <div class="p-3 space-y-2 flex-1 overflow-y-auto max-h-[550px]">
+                    <div class="p-3 space-y-2 flex-1 overflow-y-auto max-h-[400px]">
                         <div v-for="item in schedule.filter(s => s.day === day)" :key="item.slot + item.teacher" class="border rounded-lg p-2.5 text-sm bg-gray-50 hover:bg-indigo-50 transition border-l-4 border-l-indigo-500">
                             <div class="flex justify-between font-bold text-xs text-indigo-600 mb-1">
                                 <span>🕒 {{ item.time }}</span>
@@ -263,6 +256,26 @@
                 <ul class="list-disc list-inside text-xs text-red-600 space-y-1">
                     <li v-for="err in genErrors">{{ err }}</li>
                 </ul>
+            </div>
+        </div>
+
+        <!-- AI CHAT ASSISTANT PANEL -->
+        <div class="bg-white border-t p-4 shrink-0 shadow-lg">
+            <div class="max-w-4xl mx-auto flex flex-col gap-2">
+                <div class="flex items-center gap-2 text-xs font-bold text-indigo-700">
+                    <i class="fas fa-robot text-base"></i> AI Көмекші (Gemini 2.0)
+                </div>
+                <div class="max-h-32 overflow-y-auto space-y-2 border p-2 rounded bg-gray-50 text-xs">
+                    <div v-if="chatMessages.length === 0" class="text-gray-400 italic">Мысалы: "Ахметовтың сабақтарын қалай азайтуға болады?" немесе "Қай топтар бос емес?"</div>
+                    <div v-for="(msg, i) in chatMessages" :key="i" class="p-2 rounded" :class="msg.role === 'user' ? 'bg-indigo-100 text-indigo-900 ml-8' : 'bg-white border text-slate-800 mr-8 ai-msg'" v-html="msg.text"></div>
+                </div>
+                <div class="flex gap-2">
+                    <input v-model="userQuestion" @keyup.enter="sendToAI" class="flex-1 p-2 border rounded text-xs" :placeholder="t('phAskAI')">
+                    <button @click="sendToAI" :disabled="chatLoading" class="bg-indigo-600 text-white px-4 py-2 rounded text-xs font-bold hover:bg-indigo-700 flex items-center gap-1">
+                        <span v-if="chatLoading" class="animate-spin"><i class="fas fa-circle-notch"></i></span>
+                        <span>Жіберу</span>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -309,7 +322,9 @@
             lblCount: "Апталық сағат саны", lblSelectGroups: "Топтарды таңдаңыз", btnAdd: "Қосу",
             assignList: "Жүктемелер тізімі", lblDays: "Күндер (үтірмен)", lblTimes: "Сабақ уақыттары",
             prefTitle: "Оқытушы кабинеті", selectTeacher: "Оқытушыны таңдаңыз", selectRoom: "Кабинетті таңдаңыз",
-            savePref: "Сақтау", btnGen: "✨ Кесте жасау", btnGenLoad: "Жасалуда...", noScheduleYet: "Әзірге кесте жасалған жоқ. Сол жақтан деректерді енгізіп, батырманы басыңыз."
+            savePref: "Сақтау", btnGen: "✨ Кесте жасау", btnGenLoad: "Жасалуда...", 
+            noScheduleYet: "Әзірге кесте жасалған жоқ. Деректерді енгізіп, кесте жасаңыз.",
+            phAskAI: "AI көмекшіден сұрақ сұраңыз..."
         },
         ru: {
             tabData: "Данные", tabLessons: "Нагрузка", tabSettings: "Настройки",
@@ -322,7 +337,9 @@
             lblCount: "Кол-во в неделю", lblSelectGroups: "Выберите группы", btnAdd: "Добавить",
             assignList: "Список нагрузки", lblDays: "Дни (через запятую)", lblTimes: "Время звонков",
             prefTitle: "Предпочтения кабинета", selectTeacher: "Выберите преподавателя", selectRoom: "Выберите аудиторию",
-            savePref: "Сохранить", btnGen: "✨ Создать расписание", btnGenLoad: "Генерация...", noScheduleYet: "Расписание еще не создано. Заполните данные слева и нажмите кнопку."
+            savePref: "Сохранить", btnGen: "✨ Создать расписание", btnGenLoad: "Генерация...", 
+            noScheduleYet: "Расписание еще не создано. Заполните данные и создайте расписание.",
+            phAskAI: "Спросите что-нибудь у AI..."
         }
     }
 
@@ -341,6 +358,7 @@
                 newAssign: { teacher: '', subject: '', count: 1, type: 'seminar' },
                 selectedGroups: [], assignments: [],
                 schedule: [], genErrors: [], loading: false,
+                chatMessages: [], userQuestion: '', chatLoading: false
             }
         },
         computed: {
@@ -407,11 +425,8 @@
                     return;
                 }
                 this.assignments.push({
-                    teacher: this.newAssign.teacher,
-                    groups: [...this.selectedGroups],
-                    subject: this.newAssign.subject,
-                    count: this.newAssign.count,
-                    type: this.newAssign.type
+                    teacher: this.newAssign.teacher, groups: [...this.selectedGroups],
+                    subject: this.newAssign.subject, count: this.newAssign.count, type: this.newAssign.type
                 });
                 this.selectedGroups = [];
             },
@@ -422,28 +437,17 @@
                 }
             },
             openTimeModal(name, type) { 
-                this.currentModalName = name; 
-                this.currentModalType = type; 
-                this.showTimeModal = true; 
+                this.currentModalName = name; this.currentModalType = type; this.showTimeModal = true; 
             },
             isBusy(d, t) { 
-                let targetDict;
-                if(this.currentModalType === 'teacher') targetDict = this.teacherBusy;
-                else if(this.currentModalType === 'group') targetDict = this.groupBusy;
-                else targetDict = this.roomBusy;
-                
+                let targetDict = this.currentModalType === 'teacher' ? this.teacherBusy : (this.currentModalType === 'group' ? this.groupBusy : this.roomBusy);
                 return (targetDict[this.currentModalName] || []).includes(`${d} ${t}`); 
             },
             toggleBusy(d, t) {
                 const s = `${d} ${t}`;
-                let targetDict;
-                if(this.currentModalType === 'teacher') targetDict = this.teacherBusy;
-                else if(this.currentModalType === 'group') targetDict = this.groupBusy;
-                else targetDict = this.roomBusy;
-                
+                let targetDict = this.currentModalType === 'teacher' ? this.teacherBusy : (this.currentModalType === 'group' ? this.groupBusy : this.roomBusy);
                 if(!targetDict[this.currentModalName]) targetDict[this.currentModalName] = [];
                 const list = targetDict[this.currentModalName];
-                
                 if(list.includes(s)) targetDict[this.currentModalName] = list.filter(x => x !== s);
                 else list.push(s);
             },
@@ -464,6 +468,34 @@
                         this.schedule = data.schedule; this.genErrors = data.errors || [];
                     } else alert(data.message || "Error");
                 } catch(e) { alert("Серверге қосылу қателігі"); } finally { this.loading = false; }
+            },
+            async sendToAI() {
+                if(!this.userQuestion.trim()) return;
+                const q = this.userQuestion.trim();
+                this.chatMessages.push({role: 'user', text: q});
+                this.userQuestion = '';
+                this.chatLoading = true;
+                
+                const contextStr = JSON.stringify({
+                    schedule: this.schedule, teachers: this.teachers, groups: this.groups, errors: this.genErrors
+                });
+                
+                try {
+                    const res = await fetch('https://unishedai.onrender.com/ask_ai', {
+                        method: 'POST', headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ question: q, schedule_context: contextStr, lang: this.lang })
+                    });
+                    const data = await res.json();
+                    if(data.status === 'success') {
+                        this.chatMessages.push({role: 'ai', text: data.answer});
+                    } else {
+                        this.chatMessages.push({role: 'ai', text: "Қате орын алды: " + data.message});
+                    }
+                } catch(e) {
+                    this.chatMessages.push({role: 'ai', text: "Серверге қосылу қателігі"});
+                } finally {
+                    this.chatLoading = false;
+                }
             },
             exportExcel() {
                 if(this.schedule.length === 0) return alert("Экспорттау үшін кесте бос болмауы керек!");
