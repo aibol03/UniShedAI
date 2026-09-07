@@ -40,7 +40,7 @@ class SessionData(BaseModel):
     teacher_prefs: Dict[str, str] = {}
     teacher_busy: Dict[str, List[str]] = {}
     room_busy: Dict[str, List[str]] = {} 
-    group_busy: Dict[str, List[str]] = {} # ЖАҢА: Топтардың бос емес уақыты
+    group_busy: Dict[str, List[str]] = {}
     days: List[str]
     times: List[str]
 
@@ -150,10 +150,7 @@ def generate_schedule(data: SessionData):
                 if t_name in occ_teachers[slot]: continue
                 if any(g in occ_groups[slot] for g in t_groups): continue
                 if t_name in data.teacher_busy and slot in data.teacher_busy[t_name]: continue
-                
-                # ЖАҢА ТЕКСЕРУ: Топтардың бос емес уақытын тексеру
                 if any((g in data.group_busy and slot in data.group_busy[g]) for g in t_groups): continue
-                
                 avail.append(slot)
             
             avail.sort(key=lambda s: score(s) + (random.random() if attempt > 0 else 0), reverse=True)
@@ -213,8 +210,20 @@ def generate_schedule(data: SessionData):
 
 @app.post("/ask_ai")
 def ask_ai(payload: ChatRequest):
-    # (AI коды бұрынғыдай қала береді)
-    pass
+    try:
+        model = genai.GenerativeModel('gemini-2.0-flash')
+        prompt = f"""
+        You are a helpful AI schedule assistant. Answer the user question based on the schedule context provided.
+        User Language: {payload.lang}
+        Current Schedule Data:
+        {payload.schedule_context}
+        
+        User Question: {payload.question}
+        """
+        response = model.generate_content(prompt)
+        return {"status": "success", "answer": response.text}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
